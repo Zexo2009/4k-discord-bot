@@ -10,7 +10,7 @@ input_template,
             await status_msg.edit(content=f"❌ Download fehlgeschlagen:\n```{stderr.decode()[-500:]}```")
             return
 
-        actual_input = None
+        actual_inpu
         for f in os.listdir(DOWNLOAD_DIR):
             if f.startswith(f"{ctx.author.id}_input"):
                 actual_input = os.path.join(DOWNLOAD_DIR, f)
