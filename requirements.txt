@@ -1,3 +1,0 @@
-discord.py
-flask
-yt-dlp
