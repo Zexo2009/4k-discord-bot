@@ -2,3 +2,4 @@ discord.py
 flask
 tzdata
 Pillow
+psycopg2-binary
