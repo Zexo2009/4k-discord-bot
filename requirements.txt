@@ -3,3 +3,4 @@ flask
 tzdata
 Pillow
 psycopg2-binary
+yt-dlp
