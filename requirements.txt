@@ -4,3 +4,4 @@ tzdata
 Pillow
 psycopg2-binary
 yt-dlp
+requests
