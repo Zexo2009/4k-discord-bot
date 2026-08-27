@@ -1,0 +1,10 @@
+discord.py
+flask
+tzdata
+Pillow
+psycopg2-binary
+yt-dlp
+requests
+ddgs
+# ddgs = free DuckDuckGo search (no API key) for /find-asset.
+# /rate-edit uses the free Google Gemini API (GEMINI_API_KEY env var) — no new package needed, uses requests.
