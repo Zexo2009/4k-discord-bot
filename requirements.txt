@@ -1,10 +1,7 @@
-discord.py
-flask
-tzdata
-Pillow
-psycopg2-binary
+discord.py>=2.4.0
+Flask>=3.0.0
+psycopg2-binary>=2.9.9
+Pillow>=10.3.0
+requests>=2.31.0
+ddgs>=6.0.0
 yt-dlp
-requests
-ddgs
-# ddgs = free DuckDuckGo search (no API key) for /find-asset.
-# /rate-edit uses the free Google Gemini API (GEMINI_API_KEY env var) — no new package needed, uses requests.
