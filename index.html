@@ -1,0 +1,334 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Core Team // Cyberpunk Experience</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      background: #050508;
+      color: #fff;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, monospace, sans-serif;
+      overflow: hidden;
+      user-select: none;
+    }
+    #webgl-canvas {
+      position: fixed;
+      inset: 0;
+      z-index: 1;
+    }
+    .ui-overlay {
+      position: fixed;
+      inset: 0;
+      z-index: 2;
+      pointer-events: none;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      padding: 2.5rem;
+    }
+    header, footer {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    .brand {
+      font-size: 0.9rem;
+      font-weight: 800;
+      letter-spacing: 0.25em;
+      text-transform: uppercase;
+      color: #00ffff;
+      text-shadow: 0 0 12px rgba(0, 255, 255, 0.6);
+    }
+    .nav-hint {
+      font-size: 0.75rem;
+      letter-spacing: 0.15em;
+      opacity: 0.7;
+      font-family: monospace;
+    }
+    .controls {
+      pointer-events: auto;
+      display: flex;
+      gap: 1rem;
+    }
+    .btn {
+      background: rgba(255, 255, 255, 0.05);
+      border: 1px solid rgba(255, 255, 255, 0.2);
+      color: #fff;
+      padding: 0.6rem 1.4rem;
+      border-radius: 999px;
+      font-size: 0.75rem;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      cursor: pointer;
+      backdrop-filter: blur(12px);
+      transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+    .btn:hover {
+      background: rgba(0, 255, 255, 0.2);
+      border-color: #00ffff;
+      box-shadow: 0 0 15px rgba(0, 255, 255, 0.4);
+      transform: translateY(-2px);
+    }
+    .active-member-info {
+      max-width: 450px;
+      pointer-events: auto;
+    }
+    .tag {
+      display: inline-block;
+      font-size: 0.7rem;
+      padding: 0.25rem 0.6rem;
+      border-radius: 4px;
+      margin-bottom: 0.6rem;
+      letter-spacing: 0.15em;
+      font-weight: bold;
+      text-transform: uppercase;
+      background: rgba(0, 255, 255, 0.15);
+      color: #00ffff;
+      border: 1px solid rgba(0, 255, 255, 0.3);
+    }
+    h1 {
+      font-size: 2.8rem;
+      font-weight: 300;
+      letter-spacing: -0.02em;
+      margin-bottom: 0.5rem;
+      text-transform: uppercase;
+    }
+    p.desc {
+      font-size: 0.85rem;
+      line-height: 1.6;
+      color: rgba(255, 255, 255, 0.65);
+      font-family: monospace;
+    }
+  </style>
+</head>
+<body>
+  <div class="ui-overlay">
+    <header>
+      <div class="brand">CORE ARCHIVE // 2026</div>
+      <div class="nav-hint">[ DRAG / SCROLL TO NAVIGATE ]</div>
+    </header>
+
+    <div class="active-member-info" id="member-info">
+      <span class="tag" id="info-role">OWNER</span>
+      <h1 id="info-name">KILLUA</h1>
+      <p class="desc" id="info-desc">Avatar: Killua Zoldyck • Status: Online</p>
+    </div>
+
+    <footer>
+      <div class="controls">
+        <button class="btn" onclick="prevCard()">← Prev</button>
+        <button class="btn" onclick="nextCard()">Next →</button>
+      </div>
+      <p class="nav-hint">ACTIVE THEORY INSPIRED</p>
+    </footer>
+  </div>
+
+  <canvas id="webgl-canvas"></canvas>
+
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+  <script>
+    // Team-Daten
+    const team = [
+      { name: "Killua", role: "Owner", pfp: "Killua (Lightning / Assassin)", color: "#00ffff", bg: "#0d2b45" },
+      { name: "Mayto", role: "Owner", pfp: "Kakashi Hatake (Sharingan)", color: "#9d4edd", bg: "#240046" },
+      { name: "Arya", role: "Co-Founder", pfp: "Gojo Satoru (Red / Akai)", color: "#ff0055", bg: "#4a001f" },
+      { name: "Prizm Aultrim", role: "Co-Founder", pfp: "Dark Figure / Shadow Entity", color: "#00ff88", bg: "#003820" },
+      { name: "Specter", role: "Chief Admin", pfp: "Gojo Satoru (Blue / Aoi)", color: "#0088ff", bg: "#002b5c" }
+    ];
+
+    let currentIndex = 0;
+    const canvas = document.getElementById('webgl-canvas');
+    const scene = new THREE.Scene();
+    const camera = new THREE.PerspectiveCamera(50, window.innerWidth / window.innerHeight, 0.1, 100);
+    camera.position.z = 5.5;
+
+    const renderer = new THREE.WebGLRenderer({ canvas, antialias: true, alpha: true });
+    renderer.setSize(window.innerWidth, window.innerHeight);
+    renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+
+    // 1. Cyber-Partikelsystem
+    const particleCount = 20000;
+    const pGeo = new THREE.BufferGeometry();
+    const pPos = new Float32Array(particleCount * 3);
+    const pCol = new Float32Array(particleCount * 3);
+
+    for (let i = 0; i < particleCount * 3; i += 3) {
+      const radius = 2.0 + Math.random() * 3.5;
+      const theta = Math.random() * Math.PI * 2;
+      const phi = Math.acos((Math.random() * 2) - 1);
+
+      pPos[i] = radius * Math.sin(phi) * Math.cos(theta);
+      pPos[i + 1] = radius * Math.sin(phi) * Math.sin(theta);
+      pPos[i + 2] = radius * Math.cos(phi);
+
+      const color = new THREE.Color(Math.random() > 0.5 ? 0x00ffff : (Math.random() > 0.5 ? 0xff0055 : 0x9d4edd));
+      pCol[i] = color.r;
+      pCol[i + 1] = color.g;
+      pCol[i + 2] = color.b;
+    }
+    pGeo.setAttribute('position', new THREE.BufferAttribute(pPos, 3));
+    pGeo.setAttribute('color', new THREE.BufferAttribute(pCol, 3));
+
+    const pMat = new THREE.PointsMaterial({
+      size: 0.018,
+      vertexColors: true,
+      blending: THREE.AdditiveBlending,
+      transparent: true,
+      opacity: 0.75
+    });
+    const particles = new THREE.Points(pGeo, pMat);
+    scene.add(particles);
+
+    // 2. Erstellung der 3D-Karten mit Canvas-Textur
+    const cardGroup = new THREE.Group();
+    scene.add(cardGroup);
+
+    function createCardTexture(member) {
+      const c = document.createElement('canvas');
+      c.width = 512;
+      c.height = 680;
+      const ctx = c.getContext('2d');
+
+      // Card Background Gradient
+      const grad = ctx.createLinearGradient(0, 0, 512, 680);
+      grad.addColorStop(0, member.bg);
+      grad.addColorStop(1, '#050508');
+      ctx.fillStyle = grad;
+      ctx.fillRect(0, 0, 512, 680);
+
+      // Border Glow
+      ctx.strokeStyle = member.color;
+      ctx.lineWidth = 12;
+      ctx.strokeRect(6, 6, 500, 668);
+
+      // Cyber Grid / Accent
+      ctx.fillStyle = 'rgba(255, 255, 255, 0.04)';
+      for(let y = 0; y < 680; y += 40) {
+        ctx.fillRect(0, y, 512, 2);
+      }
+
+      // Avatar Box
+      ctx.fillStyle = 'rgba(0, 0, 0, 0.5)';
+      ctx.fillRect(40, 40, 432, 400);
+      ctx.strokeStyle = member.color;
+      ctx.lineWidth = 3;
+      ctx.strokeRect(40, 40, 432, 400);
+
+      // Avatar Text / Symbol Placeholder
+      ctx.fillStyle = member.color;
+      ctx.font = 'bold 34px monospace';
+      ctx.textAlign = 'center';
+      ctx.fillText(`[ ${member.name.toUpperCase()} ]`, 256, 220);
+      ctx.font = '20px monospace';
+      ctx.fillStyle = '#ffffff';
+      ctx.fillText(member.pfp, 256, 260);
+
+      // Text Area
+      ctx.textAlign = 'left';
+      ctx.fillStyle = member.color;
+      ctx.font = 'bold 22px monospace';
+      ctx.fillText(member.role.toUpperCase(), 40, 500);
+
+      ctx.fillStyle = '#ffffff';
+      ctx.font = 'bold 44px sans-serif';
+      ctx.fillText(member.name, 40, 550);
+
+      ctx.fillStyle = 'rgba(255, 255, 255, 0.5)';
+      ctx.font = '18px monospace';
+      ctx.fillText('IDENTITY VERIFIED // AUTHORIZED', 40, 610);
+
+      return new THREE.CanvasTexture(c);
+    }
+
+    const cards = [];
+    const radius = 3.2;
+    const angleStep = (Math.PI * 2) / team.length;
+
+    team.forEach((member, i) => {
+      const geo = new THREE.PlaneGeometry(1.6, 2.1);
+      const texture = createCardTexture(member);
+      const mat = new THREE.MeshBasicMaterial({
+        map: texture,
+        side: THREE.DoubleSide,
+        transparent: true,
+        opacity: 0.92
+      });
+
+      const mesh = new THREE.Mesh(geo, mat);
+      const angle = i * angleStep;
+      mesh.position.set(Math.sin(angle) * radius, 0, Math.cos(angle) * radius);
+      mesh.rotation.y = angle;
+      cardGroup.add(mesh);
+      cards.push(mesh);
+    });
+
+    // Carousel Navigation
+    function updateUI(idx) {
+      const m = team[idx];
+      document.getElementById('info-name').innerText = m.name;
+      document.getElementById('info-role').innerText = m.role;
+      document.getElementById('info-role').style.color = m.color;
+      document.getElementById('info-role').style.borderColor = m.color;
+      document.getElementById('info-desc').innerText = `Avatar: ${m.pfp} • Clearance: High`;
+    }
+
+    function nextCard() {
+      currentIndex = (currentIndex + 1) % team.length;
+      updateUI(currentIndex);
+    }
+
+    function prevCard() {
+      currentIndex = (currentIndex - 1 + team.length) % team.length;
+      updateUI(currentIndex);
+    }
+
+    // Scroll / Wheel Event
+    window.addEventListener('wheel', (e) => {
+      if (e.deltaY > 30) nextCard();
+      else if (e.deltaY < -30) prevCard();
+    }, { passive: true });
+
+    // Mausverfolgung
+    let mouseX = 0, mouseY = 0;
+    window.addEventListener('mousemove', (e) => {
+      mouseX = (e.clientX / window.innerWidth - 0.5) * 0.8;
+      mouseY = -(e.clientY / window.innerHeight - 0.5) * 0.8;
+    });
+
+    // Resize
+    window.addEventListener('resize', () => {
+      camera.aspect = window.innerWidth / window.innerHeight;
+      camera.updateProjectionMatrix();
+      renderer.setSize(window.innerWidth, window.innerHeight);
+    });
+
+    // Animation Loop
+    let targetRotation = 0;
+    const clock = new THREE.Clock();
+
+    function animate() {
+      requestAnimationFrame(animate);
+      const time = clock.getElapsedTime();
+
+      // Partikel-Rotation
+      particles.rotation.y = time * 0.04;
+      particles.rotation.x = time * 0.02;
+
+      // Carousel Lerp
+      targetRotation = -currentIndex * angleStep;
+      cardGroup.rotation.y += (targetRotation + mouseX * 0.3 - cardGroup.rotation.y) * 0.08;
+      cardGroup.rotation.x += (mouseY * 0.2 - cardGroup.rotation.x) * 0.08;
+
+      // Schwebeeffekt für Karten
+      cards.forEach((card, idx) => {
+        card.position.y = Math.sin(time * 2 + idx) * 0.08;
+      });
+
+      renderer.render(scene, camera);
+    }
+    animate();
+  </script>
+</body>
+</html>
