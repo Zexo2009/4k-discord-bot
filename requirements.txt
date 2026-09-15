@@ -6,3 +6,6 @@ requests>=2.31.0
 ddgs>=6.0.0
 yt-dlp
 bgutil-ytdlp-pot-provider
+onnxruntime
+opencv-python-headless
+numpy
